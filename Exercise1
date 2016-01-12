@@ -28,5 +28,8 @@ Exercise 1:
       det blir mulig å jobbe med to tråder i serie i løpet av en sykel. Denne typen threading må styres av software
       og vi kaller trådene green threads.
       
-      
+      Når vi bruker coroutines lar vi trådene gi fra seg prosessoren ved at de kjører et kall til en yield funskjon.
+      Vanligvis er det schedueleren som avslutter trådene på forhåndsbestemte tidspunkt, men ved å la trådene kunne gi
+      fra seg styringa selv kan vi oppnå bedre effektivitet i noen scenarioer. Coroutines vil i motsetning til subroutines
+      kunne lagre sin state når den gir fra seg kontrollen, slik at den kan fortsette der den slapp neste gang den får styringa.
       

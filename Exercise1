@@ -1,0 +1,32 @@
+Exercise 1:
+  3:
+    What is concurrency? What is parallelism? What's the difference?
+      Concurrency er når to eller flere oppgaver kjøres i samme tidsrom,
+      men i et enkelt øyeblikk skjer det bare progresjon på en oppgave.
+      
+      Parallelism er når to eller flere oppgaver kjøres samtidig. Dvs at i
+      et enkelt øyeblikk vil det kunne skje progresjon på begge oppgavene. Det oppnås
+      som regel ved at to enheter jobber samtidig med relaterte oppgaver. Parallelism
+      brukes som regel når et større problem kan brytes ned i mindre uavhengige problem,
+      så blir disse mindre problemene kjørt parallelt.
+  
+    Why have machines become increasingly multicore in the past decade?
+      Før var det størst fokus på å forbedre ytelse ved å minske størrelsen på enheten, men etterhvert
+      som enhetene ble mindre ble varme og synkronisering større og større problemer. Derfor begynte man
+      å fokusere mer på andre metoder for å bedre ytelse som f. eks. multicore machines.
+    
+    Does creating concurrent programs make the programmer's life easier? Harder? Maybe both? 
+    
+    What are the differences between processes, threads, green threads, and coroutines?
+      En prosess er en instanse av et program som kjøres. 
+      
+      En prosess vil deles inn i flere tråder som behandles av en scherdueler. Tråder deler 
+      resurser i motsetning til prosesser.
+      
+      Når et OS ikke støtter multithreading kan vi i software lage en virtual machine som gjør det. I den 
+      virtuelle maskinen kan vi bruke multithreading, dette kan gjøres ved å senke klokkehastigheten slik at
+      det blir mulig å jobbe med to tråder i serie i løpet av en sykel. Denne typen threading må styres av software
+      og vi kaller trådene green threads.
+      
+      
+      

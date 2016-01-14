@@ -36,8 +36,16 @@ Exercise 1:
       Vanligvis er det schedueleren som avslutter trådene på forhåndsbestemte tidspunkt, men ved å la trådene kunne gi
       fra seg styringa selv kan vi oppnå bedre effektivitet i noen scenarioer. Coroutines vil i motsetning til subroutines
       kunne lagre sin state når den gir fra seg kontrollen, slik at den kan fortsette der den slapp neste gang den får styringa.
-      
-    Which one of these do pthread_create() (C/POSIX), threading.Thread() (Python), go (Go) create?
-      Disse lager en grønn tråd. Right?
-      
     
+    Which one of these do pthread_create() (C/POSIX), threading.Thread() (Python), go (Go) create?
+      Disse lager en grønn tråd.
+    
+    How does pythons Global Interpreter Lock (GIL) influence the way a python Thread behaves?
+      GIL sørger for at kun en tråd kan kjøre om gangen, dvs at programmet ikke kan ta i bruk parallelism(flere kjerner samtidig).
+      Dette gjør at multithread programmer vil være treigere, men implementasjonen blir mye lettere.
+    
+    With this in mind: What is the workaround for the GIL?
+      Man kan bruke process-based concurrency. Eller man kan bruke Cython som tar kode skrevet i Python og oversetter til C.
+    
+    What does func GOMAXPROCS(n int) int change?
+      Den endrer maks antall CPU'er som kan kjøre samtidig.

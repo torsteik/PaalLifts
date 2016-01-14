@@ -15,6 +15,10 @@ Exercise 1:
       som enhetene ble mindre ble varme og synkronisering større og større problemer. Derfor begynte man
       å fokusere mer på andre metoder for å bedre ytelse som f. eks. multicore machines.
     
+    What kinds of problems motivates the need for concurrent execution?
+      If a thread needs a results from another thread, the two threads can be run with concurrency so that
+      the thread can be run before the other thread as completed, it can be run when the result is ready.
+    
     Does creating concurrent programs make the programmer's life easier? Harder? Maybe both? 
     
     What are the differences between processes, threads, green threads, and coroutines?
@@ -33,3 +37,7 @@ Exercise 1:
       fra seg styringa selv kan vi oppnå bedre effektivitet i noen scenarioer. Coroutines vil i motsetning til subroutines
       kunne lagre sin state når den gir fra seg kontrollen, slik at den kan fortsette der den slapp neste gang den får styringa.
       
+    Which one of these do pthread_create() (C/POSIX), threading.Thread() (Python), go (Go) create?
+      Disse lager en grønn tråd. Right?
+      
+    

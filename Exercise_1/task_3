@@ -20,6 +20,8 @@ Exercise 1:
       the thread can be run before the other thread as completed, it can be run when the result is ready.
     
     Does creating concurrent programs make the programmer's life easier? Harder? Maybe both? 
+      Begge. Å kunne bruke tråder vil kunne gi opphav til enklere løsninger av større problemer, men
+      samtidig legger man til et element programmereren må forstå.
     
     What are the differences between processes, threads, green threads, and coroutines?
       En prosess er en instanse av et program som kjøres. 

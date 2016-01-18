@@ -13,5 +13,6 @@ What is an...
   En mutual exclusion kan beskrives som en tillatelse til å behandle en ressurs. Bare tråden som har mutex har lov til å
   behandle en gitt ressurs. Dette er nok et verktøy for å bekjempe race conditions.
   
-  ...a critical section
-    
+  ...a critical section?
+    En critical section er en del av programmet hvor to tråder ønsker å aksessere den samme ressursen samtidig. For å håndtere
+    denne situasjonen tar vi i bruk de metodene som er beskrevet ovenfor.

@@ -1,0 +1,17 @@
+What is an...
+  ...an atomic operation?
+    En atomisk operasjon er en operasjon i programmet som starter og blir ferdig uten å kunne avbrytes. Ved å bruke
+    atomiske operasjoner ungår man at en tråd tar i bruk en verdi som er under endring av en annen tråd, og som dermed
+    ville startet uten å få med seg endring som foregår.
+  
+  ...a semaphore?
+    En variabel som beskriver tilgjengeligheten til en ressurs. Den kan ha binær funskjonalitet, men kan også
+    beskrive hvilke deler av en ressurs som er tilgengelig. Semaphorse kan hjelpe oss med å bekjempe race condition
+    relaterte problemer.
+  
+  ...a mutex?
+  En mutual exclusion kan beskrives som en tillatelse til å behandle en ressurs. Bare tråden som har mutex har lov til å
+  behandle en gitt ressurs. Dette er nok et verktøy for å bekjempe race conditions.
+  
+  ...a critical section
+    

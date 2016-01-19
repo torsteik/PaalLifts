@@ -37,6 +37,6 @@ int main(void) {
 	pthread_join(thread1, NULL);
 	pthread_join(thread2, NULL);
 	
-	printf("Value of i: %i\n", i);
+	printf("Value of i: %i\n", i.value);
 	return 0;
 }

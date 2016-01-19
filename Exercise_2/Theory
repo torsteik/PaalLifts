@@ -6,12 +6,12 @@ What is an...
   
   ...a semaphore?
     En variabel som beskriver tilgjengeligheten til en ressurs. Den kan ha binær funskjonalitet, men kan også
-    beskrive hvilke deler av en ressurs som er tilgengelig. Semaphorse kan hjelpe oss med å bekjempe race condition
+    beskrive hvilke deler av en ressurs som er tilgengelig. Semaphores kan hjelpe oss med å bekjempe race condition
     relaterte problemer.
   
   ...a mutex?
-  En mutual exclusion kan beskrives som en tillatelse til å behandle en ressurs. Bare tråden som har mutex har lov til å
-  behandle en gitt ressurs. Dette er nok et verktøy for å bekjempe race conditions.
+    En mutual exclusion kan beskrives som en tillatelse til å behandle en ressurs. Bare tråden som har mutex har lov til å
+    behandle en gitt ressurs. Dette er nok et verktøy for å bekjempe race conditions.
   
   ...a critical section?
     En critical section er en del av programmet hvor to tråder ønsker å aksessere den samme ressursen samtidig. For å håndtere

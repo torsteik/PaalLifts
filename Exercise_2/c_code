@@ -14,14 +14,17 @@ shared_int_t i = {
 void* threadIterateUp(){
 	for(int j = 0; j < 1000000; j++){ 
 		pthread_mutex_lock(&i.fast_mutex);
-		i.value++; }
-	pthread_mutex_unlock(&i.fast_mutex);
+		i.value++; 
+		pthread_mutex_unlock(&i.fast_mutex);	
+	}
+	
 }
 void* threadIterateDown(){
 	for(int j = 0; j < 1000000; j++){
 		pthread_mutex_lock(&i.fast_mutex);
-		i.value--; }
-	pthread_mutex_unlock(&i.fast_mutex);
+		i.value++; 
+		pthread_mutex_unlock(&i.fast_mutex);
+	}
 }
 
 int main(void) {

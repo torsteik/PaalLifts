@@ -2,10 +2,12 @@ from threading import Thread
 
 i = 0
 def threadIterateUp():
+	global i
 	for j in xrange(0,1000000):
 		i+=1
 
 def threadIterateDown():
+	global i
 	for j in xrange(0,1000000):
 		i-=1
 

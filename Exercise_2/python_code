@@ -8,17 +8,17 @@ i = shared_int()
 
 def threadIterateUp():
 	global i
-	i.lock.acquire()
 	for j in xrange(0,1000000):
+		i.lock.acquire()
 		i.value+=1
-	i.lock.release()
+		i.lock.release()
 
 def threadIterateDown():
 	global i
-	i.lock.acquire()
 	for j in xrange(0,1000000):
+		i.lock.acquire()
 		i.value-=1
-	i.lock.release()
+		i.lock.release()
 
 def main():
 	

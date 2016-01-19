@@ -7,12 +7,14 @@ class shared_int:
 i = shared_int()
 
 def threadIterateUp():
+	global i
 	i.lock.acquire()
 	for j in xrange(0,1000000):
 		i.value+=1
 	i.lock.release()
 
 def threadIterateDown():
+	global i
 	i.lock.acquire()
 	for j in xrange(0,1000000):
 		i.value-=1

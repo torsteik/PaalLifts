@@ -40,7 +40,7 @@ Exercise 1:
       kunne lagre sin state når den gir fra seg kontrollen, slik at den kan fortsette der den slapp neste gang den får styringa.
     
     Which one of these do pthread_create() (C/POSIX), threading.Thread() (Python), go (Go) create?
-      Disse lager en grønn tråd.
+      Disse lager en tråd.
     
     How does pythons Global Interpreter Lock (GIL) influence the way a python Thread behaves?
       GIL sørger for at kun en tråd kan kjøre om gangen, dvs at programmet ikke kan ta i bruk parallelism(flere kjerner samtidig).

@@ -101,4 +101,4 @@ int main(){
 	return 0;
 }
 
-//Smooth kompileringskommando: clear; clang++-3.6 -Wall -g -fsanitize=address udp.cpp
+//Super smooth kompileringskommando: clear; clang++-3.6 -Wall -g -fsanitize=address udp.cpp

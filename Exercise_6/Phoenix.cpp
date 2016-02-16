@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/time.h>
 
 
@@ -12,8 +13,8 @@ enum substate_m_t {CREATE_BACKUP, OPERATE_M};
 enum substate_b_t {OPERATE_B, EVOLVE};
 
 int main(void){
-	int port = 44420;
-	char ip_addr[] ="129.241.187.32";
+	int port = 13000;
+	char ip_addr[] ="129.241.187.159";
 
 // TCP client()
 	//Socket
@@ -31,15 +32,15 @@ int main(void){
 		printf("setsockopt(SO_REUSEADDR) failed.\n");
 	}
 
-	char client_buffer[1024] = "Wololo!"; 
-
 // TCP server()
 	//Socket
 	int server_sock = socket(AF_INET, (SOCK_STREAM|SOCK_NONBLOCK), 0);
 
 	//Address
 	struct sockaddr_in server_addr;
+	bzero((char *) &server_addr, sizeof(server_addr)); // Get to know this guy
 	server_addr.sin_family = AF_INET;
+	server_addr.sin_addr.s_addr = INADDR_ANY;		   // and this guy.
 	server_addr.sin_port = htons(port);
 
 	//Socket settings
@@ -90,7 +91,7 @@ int main(void){
 					// Spawn new process
 					pid_t pid = fork();
 					if(!pid){
-						//printf("Wouaaa wouaaa wu wu wouaaaaaaaaaa!\n");
+						printf("Wouaaa wouaaa wu wu wouaaaaaaaaaa!\n");
 						// Restart child process
 						if(execl("Phoenix", "Phoenix", (char*)NULL) < 0){
 							perror("Failed to run exec().\n");
@@ -103,7 +104,7 @@ int main(void){
 					}
 					else{
 						// Connect master to backup
-						//printf("It's a boy!");
+						printf("It's a boy!");
 						if(connect(client_sock, (struct sockaddr*) &client_addr, sizeof(client_addr)) < 0){
 							perror("Failed to connect socket.\n");
 						}
@@ -112,7 +113,6 @@ int main(void){
 					break;
 				}
 				case OPERATE_M:{
-					printf("Senpai is alive!");
 					sleep(1);// LAME, remove when select is introduced
 					printf("%i", legacy);
 					if(send(client_sock,(void*) &legacy, 16, 0) < 0){
@@ -125,7 +125,6 @@ int main(void){
 		case BACKUP:
 			switch(substate_b){
 				case OPERATE_B:{
-					printf("Senpai, notice me!");
 					sleep(1);// LAME, remove when select is introduced
 					if(!recv(master_sock,(void*) &legacy, 16, 0)){
 						heartbeat--;

@@ -1,19 +1,19 @@
 #include <sys/socket.h>
-#include <netinet.h>
+#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <errno.h>
 #include <unistd.h>
 #include <stdio.h>
-
+#include <sys/time.h>
 
 
 enum state_t {MASTER, BACKUP};
-enum substate_m_t {CREATE_BACKUP, OPERATE};
-enum substate_b_t {OPERATE, EVOLVE};
+enum substate_m_t {CREATE_BACKUP, OPERATE_M};
+enum substate_b_t {OPERATE_B, EVOLVE};
 
-int main(){
+int main(void){
 	int port = 44420;
-	int ip_addr ="129.241.187.147";
+	char ip_addr[] ="129.241.187.32";
 
 // TCP client()
 	//Socket
@@ -43,6 +43,13 @@ int main(){
 	server_addr.sin_port = htons(port);
 
 	//Socket settings
+	/*
+	struct timeval timeout;
+	timeout.tv_sec = 3;
+	if(setsockopt(server_sock, SOL_SOCKET, SO_RCVTIMEO,(void*) &timeout, sizeof(timeout)) < 0){
+		perror("setsockopt(SO_REUSEADDR) failed.\n");
+	}
+	*/
 	if(setsockopt(server_sock, SOL_SOCKET, SO_REUSEADDR,(void*) &opt_val, sizeof(opt_val)) < 0){
 		perror("setsockopt(SO_REUSEADDR) failed.\n");
 	}
@@ -59,38 +66,88 @@ int main(){
 	}
 
 // FSM
+	uint16_t legacy = 1;
+	uint8_t heartbeat = 3;
 	// Determine state
 	state_t state;
-	int master_sock = accept(server_sock,(struct sockaddr*) &server_addr, sizeof(server_addr));
+	
+	// Figure out how to use select() and make the socket block
+	sleep(3);// LAME, remove when select is introduced
+	
+	int master_sock;
+	unsigned int master_len;
+	struct sockaddr_in master_addr;
+	master_addr.sin_family = AF_INET;
+
+	master_sock = accept(server_sock,(struct sockaddr*) &master_addr, &master_len);
 	if( master_sock < 0){ state = MASTER; }
 	else				{ state = BACKUP; }
 	
 	substate_m_t substate_m = CREATE_BACKUP;
-	substate_b_t substate_b = OPERATE;
+	substate_b_t substate_b = OPERATE_B;
 
 	switch(state){
 		case MASTER:
 			switch(substate_m){
-				case CREATE_BACKUP:
-					//fork()
-					//delay(), probably not necessary
-					//Connect client to server
-					if(connect(client_sock, (struct sockaddr*) &client_addr, sizeof(client_addr)) < 0){
-						perror("Failed to connect socket.\n");
+				case CREATE_BACKUP:{
+					// Spawn new process
+					pid_t pid = fork();
+					if(!pid){
+						printf("Wouaaa wouaaa wu wu wouaaaaaaaaaa!\n");
+						// Restart child process
+						if(execl("Phoenix", "Phoenix", (char*)NULL) < 0){
+							perror("Failed to run exec().\n");
+						}
 					}
-					substate_m = OPERATE;
-				case OPERATE:
-					//iterate()
-					//alert_backup()
+					else if(pid < 0){
+						perror("Miscarriage.\n");
+						sleep(1);
+						printf("Trying again...\n");
+					}
+					else{
+						// Connect master to backup
+						printf("It's a boy!");
+						if(connect(client_sock, (struct sockaddr*) &client_addr, sizeof(client_addr)) < 0){
+							perror("Failed to connect socket.\n");
+						}
+						substate_m = OPERATE_M;
+					}
+					break;
+				}
+				case OPERATE_M:{
+					sleep(1);// LAME, remove when select is introduced
+					printf("%i", legacy);
+					if(send(client_sock,(void*) &legacy, 16, 0) < 0){
+						perror("Failed to send message.\n");
+					}
+					legacy++;
+					break;
+				}
 			}
 		case BACKUP:
 			switch(substate_b){
-				case OPERATE:
+				case OPERATE_B:{
 					//recv()
-					//store()
-				case EVOLVE:
-					//prepare to becom master
+					sleep(1);// LAME, remove when select is introduced
+					if(!recv(master_sock,(void*) &legacy, 16, 0)){
+						heartbeat--;
+					}
+					else{
+						heartbeat = 3;
+					}
+
+					if(!heartbeat){
+						printf("Senpai is dead.\n");
+						if(close(master_sock)){
+							perror("Failed to close socket\n");
+						}
+						if(close(server_sock)){
+							perror("Failed to close socket\n");
+						}
+						state = MASTER;
+					}
+					break;
+				}
 			}
 	}
-
 }

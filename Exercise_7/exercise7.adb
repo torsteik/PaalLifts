@@ -49,15 +49,15 @@ procedure exercise7 is
     -- PART 1: Roll back to previous value here
     -------------------------------------------    
     function Unreliable_Slow_Add (x : Integer) return Integer is
-    Error_Rate : Constant := 0.15;  -- (between 0 and 1)
-    Rnum : Integer := Random(Gen);
-    begin
+    Error_Rate : Constant := 0.10;  -- (between 0 and 1)
+    Rnum : Float := 0.0;
+	begin
+		Rnum := Random(Gen);
         if Rnum > Error_Rate then
-            delay Duration(4*Rnum);
-            x := 10 + x;
-            return x;
+            delay Duration(4.0 * Rnum);
+            return 10 + x;
         else
-            delay Duration(Rnum*(0.5/Error_Rate));
+            delay Duration(Rnum * (0.5/Error_Rate));
             Raise Count_Failed;
         end if;
     end Unreliable_Slow_Add;
@@ -79,11 +79,11 @@ procedure exercise7 is
 
             begin
                 Num := Unreliable_Slow_Add(Num);
-            exception -- Handling the 'Count_Failed' Exception
+           	exception -- Handling the 'Count_Failed' Exception
                 when Count_Failed =>
-                    Manager.Signal_Abort;
-            end Finished;
-
+					Manager.Signal_Abort;
+            end;
+			Manager.Finished;
 
             if Manager.Commit = True then
                 Put_Line ("  Worker" & Integer'Image(Initial) & " comitting" & Integer'Image(Num));

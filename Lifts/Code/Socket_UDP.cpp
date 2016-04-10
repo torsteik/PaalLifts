@@ -8,8 +8,12 @@
 
 #include "Socket_UDP.h"
 
+Socket_UDP::Socket_UDP(){
+	state = EMPTY_SOCK;
+}
 
-Socket_UDP::Socket_UDP(int recv_ip, int send_ip, int port){
+
+Socket_UDP::Socket_UDP(int recv_ip, int send_ip, int port, int init_state){
 	//Create socket
 	recv_addr.sin_family = AF_INET;
 	recv_addr.sin_port = htons(port);
@@ -20,6 +24,8 @@ Socket_UDP::Socket_UDP(int recv_ip, int send_ip, int port){
 	send_addr.sin_family = AF_INET;
 	send_addr.sin_port = htons(port);
 	send_addr.sin_addr.s_addr = htonl(send_ip);
+
+	state = init_state;
 }
 
 
@@ -32,6 +38,8 @@ void Socket_UDP::sock_setup(){ //Might be better to change the name as this soun
 		perror("setsockopt(SO_REUSEADDR) failed.\n");
 	if (bind(pid, (struct sockaddr*) &recv_addr, sizeof(recv_addr)))
 		perror("Failed to bind socket.\n");
+
+	functional = 1;
 }
 
 msg_t Socket_UDP::recv(){

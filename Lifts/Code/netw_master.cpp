@@ -1,6 +1,9 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <time.h>
+#include <sys/select.h>
+
+#include <pthread.h>
 
 #include "netw_master.h"
 #include "network_fsm.h"
@@ -19,6 +22,9 @@ void* broadcast_alive_func(void* netw_members_void){
 void* manage_connections_func(void* netw_members_void){ //Change name, it's about creating not managing. Maybe include recv functionality.
 	Socket_UDP* netw_members = (Socket_UDP*)netw_members_void;
 	msg_t msg;
+
+	pthread member_com_threads[256]; //Maybe reduce to 255
+	shared_variables_t* shared_vars; // might just need to update the one passed to manage_connections_func. No dont make shallow copy of ip_id
 	while (1){
 		msg = netw_members[255].recv();
 
@@ -41,6 +47,8 @@ void* manage_connections_func(void* netw_members_void){ //Change name, it's abou
 			//Send confirmation
 			if (!netw_members[something(msg.sender_ip)].send(&accept_msg))
 				printf("Failed to accept connection.\n");
+			
+			pthread_create(&member_com_threads[something(msg.sender_ip)], NULL, &distribute_orders, shared_vars);
 			break;
 
 		default:
@@ -96,4 +104,51 @@ void* manage_backup_func(void* backup_func_arg_void){
 	}
 }
 
-void* distribute_orders_func()
+void* distribute_orders(void* shared_vars_void){
+	shared_variables_t* shared_vars = (shared_variables_t*)shared_vars_void;
+	msg_t msg;
+	int cheapest_slave;
+	char new_order_msg[3];
+	new_order_msg[0] = NEW_ORDER;
+	int lives = 3;
+	
+	struct timeval timeout; // Consider making the select() setup a func or try to simplify somehow
+	timeout.tv_sec = 0;
+	timeout.tv_usec = 400000;
+	//Set processes to watch
+	fd_set readfds;
+	FD_ZERO(&readfds);
+	FD_SET((shared_vars->netw_members[shared_vars->ip]).pid, &readfds);  //Macro shared vars or make a new pointer or some shit
+
+	clock_t prev_heartbeat = clock();
+
+	while (1){
+		if (select(shared_vars->netw_members[shared_vars->ip].pid + 1, &readfds, NULL, NULL, &timeout)){ //Not sure about first argument
+			msg = shared_vars->netw_members[shared_vars->ip].recv();
+		}
+		switch (MSG_ID){
+		case S_ALIVE:
+			shared_vars->netw_members[shared_vars->ip].floor = msg.content[1];
+			shared_vars->netw_members[shared_vars->ip].dir	 = msg.content[2];
+			lives = 3;
+			prev_heartbeat = clock();
+			break;
+
+		case NEW_ORDER:
+			for (int i = 0; i < N_FLOORS * 2; i++){
+				if (shared_vars->master_q[i] != 255 && msg.content[i + 1]){  // Meaning the order is not already active
+					new_order_msg[2] = i;
+					cheapest_slave = cost_fun(shared_vars, i);
+					shared_vars->netw_members[cheapest_slave].send(new_order_msg);
+					//get ack
+					shared_vars->master_q[i] = shared_vars->ip;
+				}
+			}
+		case COMPLETED_ORDER:
+		}
+	}
+}
+
+int cost_fun(shared_variables_t* shared_vars, char new_order){
+
+}

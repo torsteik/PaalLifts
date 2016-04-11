@@ -59,11 +59,11 @@ int find_master(Socket_UDP* netw_members){
 	//Set processes to watch
 	fd_set readfds;
 	FD_ZERO(&readfds);
-	FD_SET((netw_members[255]).pid, &readfds);
+	FD_SET(netw_members[255].pid, &readfds);
 	//Start M_ALIVE signal search
 	clock_t start = clock();
 	while (timeout.tv_usec > 0){
-		if (select(&netw_members[255] + 1, &readfds, NULL, NULL, &timeout)){ //Not sure about first argument
+		if (select(netw_members[255].pid + 1, &readfds, NULL, NULL, &timeout)){ //Not sure about first argument
 			msg = netw_members[255].recv();
 			if (MSG_ID == M_ALIVE) return msg.sender_ip;
 		}
@@ -71,3 +71,4 @@ int find_master(Socket_UDP* netw_members){
 	}
 	return 0;
 }
+

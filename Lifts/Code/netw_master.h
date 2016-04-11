@@ -10,6 +10,13 @@ struct backup_func_arg_t{ //Change name to master_shared_variables and use this 
 	char* master_q_arg;
 };
 
+struct shared_variables_t{
+	Socket_UDP* netw_members;
+	int ip;
+	int* master_q
+}; // Make sure this becomes a pointer and that all threads point to the same object. OBS, this is must not happen for ip_id!!!!
+//(Probably not)Also after passing this to threads it might be unnecessary to typecast it, this could be done only when needed.
+
 void* broadcast_alive_func(void* netw_members_void);
 void* manage_connections_func(void* netw_members_void);
 int determine_master(); //Bad name

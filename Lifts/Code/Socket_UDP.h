@@ -14,6 +14,7 @@ struct msg_t{ //Make a member of Socket_UDP
 	char content[BUFF_SIZE];
 };
 
+
 class Socket_UDP{
 public:
 	Socket_UDP();
@@ -22,8 +23,11 @@ public:
 	~Socket_UDP();
 
 	int state; //state might not be a good name as it's not really a state, more like a 'who'
-	int pid;
+	int pid;	// OBS! It should be called fd not pid
 	char buffer[BUFF_SIZE]; //Change to private? Adjust size?
+
+	int floor;
+	int dir;
 
 	msg_t recv();
 	int send(char content[BUFF_SIZE]);

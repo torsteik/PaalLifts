@@ -1,36 +1,37 @@
 #ifndef NETWORK_FSM_H
 #define NETWORK_FSM_H
 
-//Most of these defines can be placed in Socket_UDP, also solving or include loop problem
+#include "NetwMemb.h"
+#include <stdint.h>
+//Most of these defines can be placed in NetwMemb, also solving or include loop problem
 #define SEC_TO_USEC		1000000
-
 #define N_FLOORS		4
 
-#define BROADCAST		255
+enum State{ FIND_NETWORK, MASTER, SLAVE };
 
-#define NETW_INFO_PORT	32123
-#define ELEV_INFO_PORT	32124
+struct SharedVars{
+	NetwMemb netw_membs[256];
+	int master_q[N_FLOORS * 2];
+	uint8_t* slave_id;
+}; //OBS, this is must not happen for ip_id!!!!
 
-//These could be moved to Socket_UDP
-#define MSG_ID			(int)msg.content[0] //Consider making enum && move to network_fsm.h
-//OBS OBS OBS, MSG_ID only works if the "message" is called msg.
-#define ERROR			0
-#define	M_ALIVE			1 //Consider making this 3 so it sends hearts, could have slave send this as well
-#define CONNECT			2
-#define ACCEPT_CON		3
-#define BECOME_BACKUP	4
-#define BACKUP_DATA		5
-#define S_ALIVE			6
-#define NEW_ORDER		7
-#define COMPLETED_ORDER	8
+struct SelectVar{
+	struct timeval timeout;
+	fd_set readfds;
+};
 
-// Type definitions:
-enum state_t{ FIND_NETWORK, MASTER, SLAVE };
-
-
-// Functions:
 void network_fsm();
-int find_master();
-//The functions to be run by threads should probably have their own module or something; maybe there should be a module for each state: master, slave
-
+int find_master(NetwMemb netw_membs[256]);
+SelectVar select_setup(int sec, int usec, int fd);
 #endif
+
+
+/*
+struct timeval timeout; // Consider making the select() setup a func or try to simplify somehow
+timeout.tv_sec = 0;
+timeout.tv_usec = 400000;
+//Set processes to watch
+fd_set readfds;
+FD_ZERO(&readfds);
+FD_SET((shared_vars->netw_members[shared_vars->ip]).sock_fd, &readfds);  //Macro shared vars or make a new pointer or some shit
+*/

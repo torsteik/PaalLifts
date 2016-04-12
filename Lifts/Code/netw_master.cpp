@@ -1,68 +1,156 @@
-#include <netinet/ip.h>
-#include <sys/time.h>
-#include <sys/select.h>
-#include <pthread.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <time.h>
-#include <stdint.h>
+#include <sys/select.h>
+#include <pthread.h>
 
-#include "netw_fsm.h"
 #include "netw_master.h"
+#include "netw_fsm.h"	//Because: 1. struct SharedVars
 #include "NetwMemb.h"
 
-void network_fsm(){
-	SharedVars shrd_vars;																//Should maybe be named shrd_master_vars or something
-	shrd_vars.netw_membs[BROADCAST] = NetwMemb(INADDR_ANY, id_to_ip(BROADCAST), NETW_INFO_PORT, BROADCASTER); /*Review: OBS! BROADCAST need to be full IP in host byte order and BROADCASTER must be the lamest define ever, lol*/
-	for (int i = 0; i < N_FLOORS * 2; i++)	shrd_vars.master_q[i] = 0;
-
-	unsigned long master_ip;
-
-	State state = FIND_NETWORK;
+void* broadcast_heartbeat(void* shrd_vars_void){
+	SharedVars* shrd_vars = (SharedVars*)shrd_vars_void;
+	char heartbeat_msg = HEARTBEAT;
 	while (1){
-		switch (state){
-		case FIND_NETWORK:
-			master_ip = find_master(shrd_vars.netw_membs);
-			if (!master_ip) state = MASTER; 
-			else 			state = SLAVE;
-			break;
-
-		case MASTER:
-			pthread master_threads[3];
-
-			pthread_create(&master_threads[0], NULL, &broadcast_heartbeat, &shrd_vars);
-			pthread_create(&master_threads[1], NULL, &manage_netw, &shrd_vars);			//Investigate how sockets works as shared variables
-			pthread_create(&master_threads[2], NULL, &manage_backup, &shrd_vars);
-			break;
-
-		case SLAVE:
-
-			break;
-		}
+		if (!shrd_vars->netw_membs[BROADCAST].send(&heartbeat_msg))
+			printf("Failed to broadcast HEARTBEAT");
+		usleep(0.4*SEC_TO_USEC);
 	}
 }
 
-int find_master(NetwMemb netw_membs[256]){
+void* manage_netw(void* shrd_vars_void){
+	SharedVars* shrd_vars = (SharedVars*)shrd_vars_void;
+	pthread slave_com_threads[255];
 	msg_t msg;
-	SelectVar slct_var = select_setup(0, 1000000 - 1, netw_membs[BROADCAST].sock_fd);
-	clock_t start = clock();
-	while (slct_var.timeout.tv_usec > 0){
-		if (select(netw_membs[BROADCAST].sock_fd + 1, &slct_var.readfds, NULL, NULL, &slct_var.timeout)){ //Not sure about first argument
-			msg = netw_membs[BROADCAST].recv();
-			if (MSG_ID == HEARTBEAT) return msg.sender_ip;
+	char accept_msg = ACCEPT_CON;
+
+	while (1){
+		msg = shrd_vars->netw_membs[BROADCAST].recv();
+		switch (MSG_ID){
+		case ERROR:
+			printf("Error receiving in manage_connecions_func(...).\n");				//Maybe this can be done in .recv()?
+			break;
+
+		case HEARTBEAT:
+			determine_master();
+			break;
+
+		case CONNECT:
+			SlaveThreadVars slave_thread_vars; // Make sure this won't overwrite the previous
+			shrd_vars->netw_membs[ip_to_id(msg.sender_ip)] = NetwMemb(msg.sender_ip, msg.sender_ip, ELEV_INFO_PORT, SLAVE_SOCK);
+			shrd_vars->netw_membs[ip_to_id(msg.sender_ip)].send(&accept_msg);
+			slave_thread_vars.shrd_vars = shrd_vars;
+			slave_thread_vars.slave_id = ip_to_id(msg.sender_ip);
+			pthread_create(&slave_com_threads[ip_to_id(msg.sender_ip)], NULL, &handle_orders, &slave_thread_vars);
+			break;
 		}
-		slct_var.timeout.tv_usec = (clock() - start) * SEC_TO_USEC / CLOCKS_PER_SEC;
 	}
-	return 0;
 }
 
-SelectVar select_setup(int sec, int usec, int fd){
-	SelectVar slct_var;
-	//Set timeout
-	slct_var.timeout.tv_sec = sec;
-	slct_var.timeout.tv_usec = usec;
-	//Place the file descriptor, fd, in a file descriptor set. 
-	FD_ZERO(&slct_var.readfds);
-	FD_SET(fd, &slct_var.readfds);
-	return slct_var;
+int determine_master(){
+
+}
+
+void* handle_orders(void* shrd_vars_void){										//HELP PLZ!
+	SlaveThreadVars* slave_thread_vars = (SlaveThreadVars*)shrd_vars_void;
+	SharedVars* shrd_vars = slave_thread_vars->shrd_vars;						//Fokin' names!
+	int slave_id = slave_thread_vars->slave_id;									//...
+	msg_t msg;																	//Look to rename, but this will affect define
+	int cheapest_slave;
+	int lives = 3;
+	char new_order_msg[3];
+	new_order_msg[0] = NEW_ORDER;
+	SelectVar slct_var = select_setup(0, 400000, shrd_vars->netw_membs[slave_id].sock_fd);
+
+	clock_t prev_heartbeat = clock();
+	while (1){
+		if (select(shrd_vars->netw_membs[slave_id].sock_fd + 1, &slct_var.readfds, NULL, NULL, &slct_var.timeout))
+			msg = shrd_vars->netw_membs[slave_id].recv();
+		else
+			msg.content[0] = NO_RESPONSE;
+		switch (MSG_ID){
+		case HEARTBEAT:
+			shrd_vars->netw_membs[slave_id].floor = msg.content[1];
+			shrd_vars->netw_membs[slave_id].dir = msg.content[2];
+			lives = 3;
+			prev_heartbeat = clock();
+			break;
+
+		case NEW_ORDER:
+			for (int button = 0; button < N_FLOORS * 2; button++){
+				if (!shrd_vars->master_q[button] && msg.content[button + 1]){
+					new_order_msg[2] = button;
+					cheapest_slave = cost_fun(shrd_vars, button);
+					shrd_vars->netw_membs[cheapest_slave].send(new_order_msg);
+					//get ack
+					shrd_vars->master_q[button] = slave_id;
+				}
+			}
+			break;
+
+		case COMPLETED_ORDER:
+			for (int button = 0; button < N_FLOORS * 2; button++){
+				if (shrd_vars->master_q[button] && msg.content[button + 1]){
+					shrd_vars->master_q[button] = 0;
+					//ack
+				}
+			}
+			break;
+
+		case NO_RESPONSE:
+			if ((clock() - prev_heartbeat) / CLOCKS_PER_SEC > 0.5){
+				lives--;
+				if (!lives){
+					for (int button = 0; button < N_FLOORS * 2; button++){
+						if (shrd_vars->master_q[button] == slave_id){
+							//Place order in local_q / make it re-enter the network as a new order
+						}
+						close(shrd_vars->netw_membs[slave_id].sock_fd);
+						shrd_vars->netw_membs[slave_id] = NetwMemb();
+						pthread_exit();										// Might need arg for return value
+					}
+				}
+			}
+		}
+	}
+}
+
+void* manage_backup(void* shrd_vars_void){
+	SharedVars* shrd_vars = (SharedVars*)shrd_vars_void;
+	int  backup = NO_BACKUP;
+	char upgrade_msg = BECOME_BACKUP;
+	int  update = 0;
+	char update_msg[1 + N_FLOORS * 2];
+	update_msg[0] = BACKUP_DATA;
+	for (int button = 1; button < N_FLOORS * 2 +1; button++) update_msg[button +1] = 0;
+
+	while (1){																			//Consider using a sleep here so it doesnt use more processing power than necessary
+		if (backup == NO_BACKUP){
+			for (int memb_id = 0; memb_id < 255; memb_id++){
+				if (shrd_vars->netw_membs[memb_id].role == SLAVE_SOCK){
+					shrd_vars->netw_membs[memb_id].send(&upgrade_msg);					// Need ack here and abort if not received
+					backup = memb_id;
+					shrd_vars->netw_membs[memb_id].role = BACKUP_SOCK;
+					break;
+				}
+			}
+		}
+
+		else{
+			for (int button = 0; button < N_FLOORS * 2; ++button){
+				if (shrd_vars->master_q[button] != update_msg[button +1]){
+					update_msg[button +1] = shrd_vars->master_q[button];
+					update = 1;
+				}
+			}
+			if (update){
+				shrd_vars->netw_membs[backup].send(update_msg);
+				update = 0;
+			}
+		}
+	}
+}
+
+int cost_fun(shared_variables_t* shared_vars, char new_order){
+
 }

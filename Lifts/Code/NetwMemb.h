@@ -4,30 +4,28 @@
 #include <netinet/in.h>
 #include <stdint.h>
 
-// Do these defines belong here?
+//------NETWORK ADDRESS------
 #define BROADCAST		255						//0x40BC576FF equals 129.241.187.255
 #define NETW_INFO_PORT	32123
 #define ELEV_INFO_PORT	32124
-
+//------MSG FORMAT-----------
 #define BUFF_SIZE		1024
-
-#define MSG_ID			(int)msg.content[0]				//Consider making enum && move to network_fsm.h, delete?
-#define ERROR			0
-#define	HEARTBEAT		1								//Consider making this 3 so it sends hearts, could have slave send this as well
-#define CONNECT			2
-#define ACCEPT_CON		3
+#define MSG_ID			content[0]				//Consider making enum && move to network_fsm.h, delete?
+#define ERROR			1
+#define NO_RESPONSE		2
+#define	HEARTBEAT		3
+#define CONNECT			4
+#define ACCEPT_CON		5
 #define BECOME_BACKUP	4
 #define BACKUP_DATA		5
-#define S_ALIVE			6
 #define NEW_ORDER		7
 #define COMPLETED_ORDER	8
-#define NO_RESPONSE		9
-
-#define EMPTY_SOCK		0
-#define SLAVE_SOCK		1
-#define BACKUP_SOCK		2
-#define MASTER_SOCK		3								
-#define BROADCASTER		4								// Change this name? Join this and BROADCAST
+//------NETW MEMB ROLES------
+#define NO_ROLE			0
+#define SLAVE_ROLE		1
+#define BACKUP_ROLE		2
+#define MASTER_ROLE		3
+#define BROADCAST_ROLE	4
 
 unsigned long id_to_ip(uint8_t id){ return 0x40BC57600 + id; }
 uint8_t ip_to_id(unsigned long ip){ return ip - 0x40BC57600; }
@@ -50,8 +48,9 @@ public:
 	struct sockaddr_in bind_addr;						//Could be private
 	struct sockaddr_in send_addr;
 	int role;											//Is this needed?
-	int floor; 
-	int dir; // -1 = DOWN, 0 = IDLE, 1 = UP
+	int state;
+	int floor;
+	int dir;
 };
 
 #endif

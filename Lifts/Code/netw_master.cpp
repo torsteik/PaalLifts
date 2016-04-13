@@ -152,5 +152,54 @@ void* manage_backup(void* shrd_vars_void){
 }
 
 int cost_fun(shared_variables_t* shared_vars, char new_order){
-
+	/*
+	struct SharedVars{
+	NetwMemb netw_membs[256];
+	int master_q[N_FLOORS * 2];
+	uint8_t* slave_id;
+	};
+	
+	struct SlaveThreadVars{			//Find better name
+	SharedVars* shrd_vars;
+	uint8_t slave_id;
+	};
+	
+	new_order = [ETG,DIR], DIR =-1(down), 0(idle), 1(up)
+	netw_membs[i] = [ETG,DIR]
+	*/
+	
+	int member_utilities [256];
+	for(int i = 0; i < 256; ++i){
+		unsigned int cost = 1000;
+		int desired_direction = new_order[ETG]-(netw_membs[i][ETG]+netw_membs[i][DIR])
+		if (!desired_dirction){
+			return i;
+		}
+		else if(desired_direction < 0 && netw_membs[i][DIR] <= 0){
+			cost = (unsigned)desired_direction;
+		}
+		else if(desired_direction < 0 && netw_membs[i][DIR] > 0){
+			cost = N_FLOORS - (netw_membs[i][ETG]+netw_membs[i][DIR]) + N_FLOORS - new_order[ETG];
+		}
+		else if(desired_direction > 0 && netw_membs[i][DIR] >= 0){
+			cost = desired_direction;
+		}
+		else if(desired_direction > 0 && netw_membs[i][DIR] < 0){
+			cost = (netw_membs[i][ETG]+netw_membs[i][DIR]) + new_order[ETG];
+		}
+		if(!netw_membs[i][DIR]){
+			cost--;
+		}
+		int member_utilities [i] = cost;
+	}
+	int min_utility = 2*N_FLOORS;
+	int min_index = 0;
+	for(int i = 0; i < 256; ++i){
+		if (member_utilities[i] < min_utility){
+			min_utility = member_utilities[i];
+			min_index = i;
+		}
+	}
+	
+	return i;
 }

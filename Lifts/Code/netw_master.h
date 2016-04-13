@@ -3,7 +3,7 @@
 
 #include "NetwMemb.h"
 
-#define NO_BACKUP	-1
+#define NO_BACKUP	0
 
 struct SlaveThreadVars{			//Find better name
 	SharedVars* shrd_vars;

@@ -167,23 +167,39 @@ int cost_fun(shared_variables_t* shared_vars, char new_order){
 	new_order = [ETG,DIR], DIR =-1(down), 0(idle), 1(up)
 	netw_membs[i] = [ETG,DIR]
 	*/
+	// DEFINING THINGS THAT MAKES SENSE FOR A UTILITY FUNCTION
+	int order_etg = 0;
+	int order_dir = 0;
+	if (new_order >= N_FLOORS){
+		order_etg = new_order-N_FLOORS;
+		order_dir = -1;
+	}
+	else{
+		order_etg = new_order;
+		order_dir = 1;
+	}
+	int elev_etg = 0;
+	int elev_dir = 0;
 	
 	int member_utilities [256];
 	for(int i = 0; i < 256; ++i){
-		unsigned int cost = 1000;
-		int desired_direction = new_order[ETG]-(netw_membs[i][ETG]+netw_membs[i][DIR]);
 		
-		if(desired_direction < 0 && netw_membs[i][DIR] <= 0){
+		elev_dir = shared_vars->netw_membs[i].dir;
+		elev_etg = shared_vars->netw_membs[i].etg + elev_dir;
+		unsigned int cost = 1000;
+		int desired_direction = order_etg-elev_etg;
+		
+		if(desired_direction < 0 && elev_dir <= 0){
 			cost = (unsigned)desired_direction;
 		}
-		else if(desired_direction < 0 && netw_membs[i][DIR] > 0){
-			cost = N_FLOORS - (netw_membs[i][ETG]+netw_membs[i][DIR]) + N_FLOORS - new_order[ETG];
+		else if(desired_direction < 0 && elev_dir > 0){
+			cost = N_FLOORS - elev_etg + N_FLOORS - new_order[ETG];
 		}
-		else if(desired_direction > 0 && netw_membs[i][DIR] >= 0){
+		else if(desired_direction > 0 && elev_dir >= 0){
 			cost = desired_direction;
 		}
-		else if(desired_direction > 0 && netw_membs[i][DIR] < 0){
-			cost = (netw_membs[i][ETG]+netw_membs[i][DIR]) + new_order[ETG];
+		else if(desired_direction > 0 && elev_dir < 0){
+			cost = elev_etg + order_etg;
 		}
 		if(!netw_membs[i][DIR]){
 			cost--;

@@ -42,7 +42,8 @@ void NetwMemb::sock_setup(){
 msg_t NetwMemb::recv(){
 	msg_t msg;
 	struct sockaddr_in sender_addr; 
-	if (recvfrom(sock_fd, msg.content, BUFF_SIZE, 0, (struct sockaddr*) &sender_addr, sizeof(sender_addr)) < 0){
+	unsigned int sender_size = sizeof(sender_addr);
+	if (recvfrom(sock_fd, msg.content, BUFF_SIZE, 0, (struct sockaddr*) &sender_addr, &sender_size) < 0){
 		perror("Error receiving message.\n");
 		msg.content[0] = ERROR;
 	}

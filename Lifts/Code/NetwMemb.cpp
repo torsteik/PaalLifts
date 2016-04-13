@@ -7,7 +7,7 @@
 #include "NetwMemb.h"
 
 NetwMemb::NetwMemb(){
-	role = EMPTY_SOCK;
+	role = NO_ROLE;
 }
 
 

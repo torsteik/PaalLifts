@@ -191,6 +191,7 @@ int cost_fun(shared_variables_t* shared_vars, char new_order){
 			cost--;
 		}
 		int member_utilities [i] = cost;
+		
 	}
 	int min_utility = 2*N_FLOORS;
 	int min_index = 0;

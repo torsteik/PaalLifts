@@ -171,11 +171,9 @@ int cost_fun(shared_variables_t* shared_vars, char new_order){
 	int member_utilities [256];
 	for(int i = 0; i < 256; ++i){
 		unsigned int cost = 1000;
-		int desired_direction = new_order[ETG]-(netw_membs[i][ETG]+netw_membs[i][DIR])
-		if (!desired_dirction){
-			return i;
-		}
-		else if(desired_direction < 0 && netw_membs[i][DIR] <= 0){
+		int desired_direction = new_order[ETG]-(netw_membs[i][ETG]+netw_membs[i][DIR]);
+		
+		if(desired_direction < 0 && netw_membs[i][DIR] <= 0){
 			cost = (unsigned)desired_direction;
 		}
 		else if(desired_direction < 0 && netw_membs[i][DIR] > 0){
@@ -189,6 +187,9 @@ int cost_fun(shared_variables_t* shared_vars, char new_order){
 		}
 		if(!netw_membs[i][DIR]){
 			cost--;
+		}
+		if(netw_membs[DIR]==EMERGENCY){
+			cost = 1000;
 		}
 		int member_utilities [i] = cost;
 		

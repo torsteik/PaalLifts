@@ -50,8 +50,8 @@ public:
 	struct sockaddr_in bind_addr;						//Could be private
 	struct sockaddr_in send_addr;
 	int role;											//Is this needed?
-	int floor;
-	int dir;
+	int floor; 
+	int dir; // -1 = DOWN, 0 = IDLE, 1 = UP
 };
 
 #endif

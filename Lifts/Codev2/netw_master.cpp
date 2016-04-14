@@ -78,7 +78,7 @@ void* report_events_master(void* shared_void){
 }
 
 int determine_master(){
-
+	
 }
 
 void* handle_orders(void* shared_void){										//HELP PLZ!

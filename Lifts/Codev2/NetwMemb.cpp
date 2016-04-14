@@ -66,7 +66,7 @@ void NetwMemb::send_heartbeat(){
 		heartbeat[3] = this->elev_fsm_state;
 	}
 	else if (this->role == BROADCAST_ROLE){
-
 	}
 	this->send(heartbeat);
 }
+

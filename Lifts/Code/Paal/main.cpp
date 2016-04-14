@@ -88,12 +88,28 @@ void recover_process_pair(){
 
 		previous_floor = process_recovery_file.get();
 		previous_dir = process_recovery_file.get();
-		(TEMP_STOP_substate_t)substate = process_recovery_file.get();
+		substate = (TEMP_STOP_substate_t)process_recovery_file.get();
+
+		//-------------------------------------------Network states
+
+		for (int i = 0; i < 255; ++i){
+			shared->netw_membs[i].role = process_recovery_file.get();
+		}
+		shared->netw_fsm_state = process_recovery_file.get();
+		for (int i = 0; i < 2 * N_FLOORS; ++i){
+			shared->netw_master_q[i] = process_recovery_file.get();
+		}
+		for (int i = 0; i < 2 * N_FLOORS; ++i){
+			shared->local_ext_q[i] = process_recovery_file.get();
+		}
+		shared->recovered = 1;
 	}
 	else{
 		cout << "Unable to read from internal queue's recovery file" << endl;
+		shared->recovered = 0;
 	}
 	process_recovery_file.close();
+	
 }
 
 void write_process_pair(){
@@ -109,7 +125,18 @@ void write_process_pair(){
 		process_recovery_file << previous_dir;
 		process_recovery_file << (int)(substate);
 
-		//Network states
+	//-------------------------------------------
+
+		for (int i = 0; i < 255; ++i){
+			process_recovery_file << shared->netw_membs[i].role;
+		}
+		process_recovery_file << shared->netw_fsm_state;
+		for (int i = 0; i < 2*N_FLOORS; ++i){
+			process_recovery_file << shared->netw_master_q[i];
+		}
+		for (int i = 0; i < 2 * N_FLOORS; ++i){
+			process_recovery_file << shared->local_ext_q[i];
+		}
 	}
 
 	else{

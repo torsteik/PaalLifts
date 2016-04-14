@@ -12,11 +12,6 @@ enum State{ FIND_NETWORK, MASTER, SLAVE };
 #define FSM_MASTER			1
 #define FSM_SLAVE			2
 
-struct SelectVar{ //Unnecessary
-	struct timeval timeout;
-	fd_set readfds;
-};
-
 
 void* netw_fsm(void* shared_void);
 unsigned long find_master(NetwMemb netw_membs[256]);

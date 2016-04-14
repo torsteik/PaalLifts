@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 //------NETWORK ADDRESS------
+#define MY_ID			0
 #define BROADCAST		255						//0x40BC576FF equals 129.241.187.255
 #define NETW_INFO_PORT	32123
 #define ELEV_INFO_PORT	32124
@@ -30,7 +31,7 @@
 unsigned long id_to_ip(uint8_t id){ return 0x40BC57600 + id; }
 uint8_t ip_to_id(unsigned long ip){ return ip - 0x40BC57600; }
 
-struct msg_t{											// Maybe change the name to something recv like
+struct RecvMsg{											// Maybe change the name to something recv like
 	int sender_ip;
 	char content[BUFF_SIZE];
 };

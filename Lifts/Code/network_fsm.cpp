@@ -16,13 +16,13 @@ void* netw_fsm(void* shared_void){
 	SharedVars* shared = (SharedVars*)shared_void;														
 	shared->netw_membs[BROADCAST] = NetwMemb(INADDR_ANY, id_to_ip(BROADCAST), NETW_INFO_PORT, BROADCAST_ROLE); 
 
-	int netw_fsm_state = FSM_FIND_NETWORK;
+	shared->netw_fsm_state = FSM_FIND_NETWORK;
 	while (1){
-		switch (netw_fsm_state){
+		switch (shared->netw_fsm_state){
 		case FSM_FIND_NETWORK:
 			unsigned long master_ip = find_master(shared->netw_membs);
-			if (!master_ip) netw_fsm_state = MASTER; 
-			else 			netw_fsm_state = SLAVE;
+			if (!master_ip) shared->netw_fsm_state = MASTER; 
+			else 			shared->netw_fsm_state = SLAVE;
 			break;
 
 		case FSM_MASTER:
@@ -32,16 +32,10 @@ void* netw_fsm(void* shared_void){
 			pthread_create(&master_threads[1], NULL, &manage_netw, shared);			//Investigate how sockets works as shared variables
 			pthread_create(&master_threads[2], NULL, &manage_backup, shared);
 
-
-			//Make this a function and only do it if this elev previously was a backup
-			//-------------------------------------------------------------------------
 			sleep(2);
-			for (int button = 0; button < N_FLOORS * 2; button++){
-				if (shared->netw_master_q[button] && shared->netw_membs[shared->netw_master_q[button]].role == EMPTY_SOCK){
-					shared->local_q[button] = shared->netw_master_q[button];
-				}
+			if (shared->netw_membs[MY_ID].role == BACKUP_ROLE){ /*Look up own role in NetwMembs*/
+				follow_up_ext_orders(shared);
 			}
-			//-------------------------------------------------------------------------
 			break;
 
 		case FSM_SLAVE:
@@ -62,7 +56,7 @@ unsigned long find_master(NetwMemb netw_membs[256]){
 		fd_set read_fd_set = file_descriptor_setup(&netw_membs[BROADCAST].sock_fd, 1);
 		if (select(netw_membs[BROADCAST].sock_fd + 1, &read_fd_set, NULL, NULL, &timeout)){
 			
-			msg_t msg = netw_membs[BROADCAST].recv();
+			RecvMsg msg = netw_membs[BROADCAST].recv();
 			if (msg.MSG_ID == HEARTBEAT){
 				return msg.sender_ip;
 			}
@@ -80,4 +74,12 @@ fd_set file_descriptor_setup(int* sock_fd_set, int set_size){
 		FD_SET(sock_fd_set[i], &read_fd_set);
 	}
 	return read_fd_set;
+}
+
+void follow_up_ext_orders(SharedVars* shared){
+	for (int button = 0; button < N_FLOORS * 2; button++){
+		if (shared->netw_master_q[button] && shared->netw_membs[shared->netw_master_q[button]].role == EMPTY_SOCK){
+			shared->local_q[button] = shared->netw_master_q[button];
+		}
+	}
 }

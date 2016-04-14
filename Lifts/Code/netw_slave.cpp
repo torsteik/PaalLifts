@@ -22,24 +22,27 @@ int serve(SharedVars* shared, unsigned long master_ip){
 		if (select(FD_SETSIZE, &read_fd_set, NULL, NULL, &timeout) > -1){
 
 			/* Check broadcast socket */
-			msg_t broadcast_msg;
+			RecvMsg broadcast_msg;
 			if (FD_ISSET(shared->netw_membs[BROADCAST].sock_fd, &read_fd_set)){
 				broadcast_msg = shared->netw_membs[BROADCAST].recv();
-			} else{
+			} 
+			else{
 				broadcast_msg.MSG_ID = NO_RESPONSE;
 			}
 			/* Check master socket */
-			msg_t master_msg;
+			RecvMsg master_msg;
 			if (FD_ISSET(shared->netw_membs[ip_to_id(master_ip)].sock_fd, &read_fd_set)){
 				master_msg = shared->netw_membs[ip_to_id(master_ip)].recv();
-			} else{
+			} 
+			else{
 				master_msg.MSG_ID = NO_RESPONSE;
 			}
 			/* Read broadcasted message */
 			if (broadcast_msg.MSG_ID == HEARTBEAT){
 				lives = 3;
 				prev_heartbeat = clock();
-			} else if (broadcast_msg.MSG_ID == NO_RESPONSE){
+			}
+			else if (broadcast_msg.MSG_ID == NO_RESPONSE){
 				if ((clock() - prev_heartbeat) / CLOCKS_PER_SEC > 0.5){
 					lives--;
 					if (!lives){
@@ -55,9 +58,11 @@ int serve(SharedVars* shared, unsigned long master_ip){
 			if (master_msg.MSG_ID == NEW_ORDER){
 				shared->local_q[master_msg.content[1]] = 1;
 				//Send ack
-			} else if (master_msg.MSG_ID == BECOME_BACKUP){
-				shared->backup = -1;
-			} else if (master_msg.MSG_ID == BACKUP_DATA){
+			} 
+			else if (master_msg.MSG_ID == BECOME_BACKUP){
+				shared->netw_membs[MY_ID].role = BACKUP_ROLE;
+			} 
+			else if (master_msg.MSG_ID == BACKUP_DATA){
 				for (int button = 0; button < N_FLOORS; button++){
 					shared->netw_master_q[button] = master_msg.content[button + 1];
 				}

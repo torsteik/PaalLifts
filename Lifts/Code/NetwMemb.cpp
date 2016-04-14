@@ -11,7 +11,7 @@ NetwMemb::NetwMemb(){
 }
 
 
-NetwMemb::NetwMemb(int recv_ip, int send_ip, int port, int init_state){
+NetwMemb::NetwMemb(int recv_ip, int send_ip, int port, int init_role){
 	//Create socket, conside using this->
 	bind_addr.sin_family = AF_INET;
 	bind_addr.sin_port = htons(port);
@@ -23,7 +23,7 @@ NetwMemb::NetwMemb(int recv_ip, int send_ip, int port, int init_state){
 	send_addr.sin_port = htons(port);
 	send_addr.sin_addr.s_addr = htonl(send_ip);
 
-	role = init_state;
+	role = init_role;
 }
 
 
@@ -39,13 +39,13 @@ void NetwMemb::sock_setup(){
 		perror("Failed to bind socket.\n");
 }
 
-msg_t NetwMemb::recv(){
-	msg_t msg;
+RecvMsg NetwMemb::recv(){
+	RecvMsg msg;
 	struct sockaddr_in sender_addr; 
 	unsigned int sender_size = sizeof(sender_addr);
 	if (recvfrom(sock_fd, msg.content, BUFF_SIZE, 0, (struct sockaddr*) &sender_addr, &sender_size) < 0){
 		perror("Error receiving message.\n");
-		msg.content[0] = ERROR;
+		msg.MSG_ID = ERROR;
 	}
 	msg.sender_ip = ntohl(sender_addr.sin_addr.s_addr);
 	return msg;

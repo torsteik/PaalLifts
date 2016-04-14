@@ -24,12 +24,8 @@ void* manage_netw(void* shared_void){
 	pthread_t order_handling_threads[255];
 
 	while (1){
-		msg_t recv_msg = shared->netw_membs[BROADCAST].recv(); // Do this everywhere: recv_msg
+		RecvMsg recv_msg = shared->netw_membs[BROADCAST].recv(); // Do this everywhere: recv_msg
 		switch (recv_msg.MSG_ID){
-		case ERROR:
-			printf("Error receiving in manage_connecions_func(...).\n");				//Maybe this can be done in .recv()?
-			break;
-
 		case HEARTBEAT:
 			determine_master();
 			break;
@@ -52,34 +48,37 @@ int determine_master(){
 void* handle_orders(void* shared_void){										//HELP PLZ!
 	SharedVars* shared = (SharedVars*)shared_void;							//Fokin' names!
 	int slave_id = shared->slave_id;										//... / Release semaphore here
-	msg_t msg;																//Look to rename, but this will affect define
-	int cheapest_slave;
-	int lives = 3;
-	char new_order_msg[2];
-	new_order_msg[0] = NEW_ORDER;
-	SelectVar slct_var;
 
+	int lives = 3;
 	clock_t prev_heartbeat = clock();
 	while (1){
-		slct_var = select_setup(0, 400000, &shared->netw_membs[slave_id].sock_fd, 1);
-		if (select(shared->netw_membs[slave_id].sock_fd + 1, &slct_var.readfds, NULL, NULL, &slct_var.timeout))
-			msg = shared->netw_membs[slave_id].recv();
+		struct timeval timeout;
+		timeout.tv_sec = 0;
+		timeout.tv_usec = 400000;
+		fd_set read_fd_set = file_descriptor_setup(&shared->netw_membs[slave_id].sock_fd, 1);
+
+		RecvMsg recv_msg;
+		if (select(shared->netw_membs[slave_id].sock_fd + 1, &read_fd_set, NULL, NULL, &timeout))
+			recv_msg = shared->netw_membs[slave_id].recv();
 		else
-			msg.content[0] = NO_RESPONSE;
-		switch (MSG_ID){
+			recv_msg.MSG_ID = NO_RESPONSE;
+
+		switch (recv_msg.MSG_ID){
 		case HEARTBEAT:
-			shared->netw_membs[slave_id].floor = msg.content[1];
-			shared->netw_membs[slave_id].dir = msg.content[2];
+			shared->netw_membs[slave_id].floor = recv_msg.content[1];
+			shared->netw_membs[slave_id].dir = recv_msg.content[2];
 			lives = 3;
 			prev_heartbeat = clock();
 			break;
 
 		case NEW_ORDER:
+			char send_msg[BUFF_SIZE];
+			send_msg[0] = NEW_ORDER;
 			for (int button = 0; button < N_FLOORS * 2; button++){
-				if (!shared->netw_master_q[button] && msg.content[button + 1]){
-					new_order_msg[1] = button;
-					cheapest_slave = cost_fun(shared, button);
-					shared->netw_membs[cheapest_slave].send(new_order_msg);
+				if (!shared->netw_master_q[button] && recv_msg.content[button + 1]){
+					send_msg[1] = button;
+					uint8_t cheapest_slave = cost_fun(shared, button);
+					shared->netw_membs[cheapest_slave].send(send_msg);
 					//get ack
 					shared->netw_master_q[button] = slave_id;
 				}
@@ -88,7 +87,7 @@ void* handle_orders(void* shared_void){										//HELP PLZ!
 
 		case COMPLETED_ORDER:
 			for (int button = 0; button < N_FLOORS * 2; button++){
-				if (shared->netw_master_q[button] && msg.content[button + 1]){
+				if (shared->netw_master_q[button] && recv_msg.content[button + 1]){
 					shared->netw_master_q[button] = 0;
 					//ack
 				}
@@ -109,25 +108,29 @@ void* handle_orders(void* shared_void){										//HELP PLZ!
 					}
 				}
 			}
+			break;
 		}
 	}
 }
 
 void* manage_backup(void* shared_void){
 	SharedVars* shared = (SharedVars*)shared_void;
-	int  backup = NO_BACKUP;
-	char upgrade_msg = BECOME_BACKUP;
-	int  update = 0;
-	char update_msg[1 + N_FLOORS * 2];
-	update_msg[0] = BACKUP_DATA;
-	for (int button = 1; button < N_FLOORS * 2 +1; button++) update_msg[button +1] = 0;
+	if (!shared->recovered){										// Probably needed more places
+		shared->backup = NO_BACKUP;
+	}
+	char send_msg[BUFF_SIZE];
+	for (int button = 1; button < N_FLOORS * 2 + 1; button++){
+		send_msg[button + 1] = 0;
+	}
+	bool update = 0;
 
 	while (1){																			//Consider using a sleep here so it doesnt use more processing power than necessary
-		if (backup == NO_BACKUP){
+		if (shared->backup == NO_BACKUP){
+			send_msg[0] = BECOME_BACKUP;
 			for (int memb_id = 0; memb_id < 255; memb_id++){
 				if (shared->netw_membs[memb_id].role == SLAVE_ROLE){
-					shared->netw_membs[memb_id].send(&upgrade_msg);					// Need ack here and abort if not received
-					backup = memb_id;
+					shared->netw_membs[memb_id].send(send_msg);					// Need ack here and abort if not received
+					shared->backup = memb_id;
 					shared->netw_membs[memb_id].role = BACKUP_ROLE;
 					break;
 				}
@@ -135,21 +138,22 @@ void* manage_backup(void* shared_void){
 		}
 
 		else{
+			send_msg[0] = BACKUP_DATA;
 			for (int button = 0; button < N_FLOORS * 2; ++button){
-				if (shared->netw_master_q[button] != update_msg[button +1]){
-					update_msg[button +1] = shared->netw_master_q[button];
+				if (shared->netw_master_q[button] != send_msg[button +1]){
+					send_msg[button +1] = shared->netw_master_q[button];
 					update = 1;
 				}
 			}
 			if (update){
-				shared->netw_membs[backup].send(update_msg);
+				shared->netw_membs[shared->backup].send(send_msg);
 				update = 0;
 			}
 		}
 	}
 }
 
-int cost_fun(SharedVars* shared, uint8_t new_order){
+uint8_t cost_fun(SharedVars* shared, uint8_t new_order){
 	/*
 	Preferable if dir is a bool
 	And state will be available so include that in calculations
@@ -172,7 +176,7 @@ int cost_fun(SharedVars* shared, uint8_t new_order){
 	int elev_dir;
 
 	int member_utilities[256];
-	for (int i = 1; i < 255; ++i){
+	for (int i = 0; i < 255; ++i){
 
 		elev_dir = shared->netw_membs[i].dir;
 		elev_floor = shared->netw_membs[i].floor + elev_dir;
@@ -201,7 +205,7 @@ int cost_fun(SharedVars* shared, uint8_t new_order){
 
 	}
 	int min_utility = 2 * N_FLOORS;
-	int min_index = 0;
+	uint8_t min_index = 0;
 	for (int i = 1; i < 255; ++i){
 		if (member_utilities[i] < min_utility){
 			min_utility = member_utilities[i];

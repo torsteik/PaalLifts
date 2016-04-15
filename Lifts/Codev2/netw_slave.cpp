@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <sys/select.h>
 #include <time.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "main.h"
 #include "netw_fsm.h"
@@ -54,13 +56,11 @@ void* report_events_slave(void* shared_void){
 		usleep(0.1*SEC_TO_USEC);
 		if (shared->orders_new[0]){
 			shared->netw_membs[ip_to_id(shared->master_ip)].send(shared->orders_new);
-			memset
+			memset(shared->orders_new, 0, sizeof(shared->orders_new));
 		}
 		if (shared->orders_complete){
 			shared->netw_membs[ip_to_id(shared->master_ip)].send(shared->orders_complete);
-			for (int i = 0; i < 1 + N_FLOORS * 2; ++i){
-				shared->orders_complete[i] = 0;
-			}
+			memset(shared->orders_complete, 0, sizeof(shared->orders_complete));
 		}
 	}
 }

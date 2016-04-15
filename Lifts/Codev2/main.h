@@ -2,9 +2,7 @@
 #define MAIN_H
 #include <stdint.h>
 
-#define NO_BACKUP	0
-#define N_FLOORS	4
-#define SEC_TO_USEC	1000000
+
 
 struct SharedVars {
 	//---------MAIN--------------------------
@@ -12,7 +10,7 @@ struct SharedVars {
 	uint8_t netw_master_q[N_FLOORS * 2]; //init
 
 	//---------ELEV_FSM----------------------
-	uint8_t local_ext_q[N_FLOORS * 2]; //include _ext_ in name, init
+	uint8_t local_q[N_FLOORS * 2]; //include _ext_ in name, init
 	char orders_new[1 + N_FLOORS * 2];
 	char orders_complete[1 + N_FLOORS * 2];
 	char floor;

@@ -47,7 +47,7 @@ void* manage_netw(void* shared_void){
 
 void* report_events_master(void* shared_void){
 	SharedVars* shared = (SharedVars*)shared_void;
-	
+
 	while (1){
 		usleep(0.1*SEC_TO_USEC);
 		if (shared->orders_new[0]){
@@ -78,14 +78,14 @@ void* report_events_master(void* shared_void){
 }
 
 int determine_master(){
-	
+
 }
 
 void* handle_orders(void* shared_void){										//HELP PLZ!
 	SharedVars* shared = (SharedVars*)shared_void;							//Fokin' names!
 	int slave_id = shared->slave_id;										//... / Release semaphore here
 
-	int lives = 3;
+	int lives = 4;
 	clock_t prev_heartbeat = clock();
 	while (1){
 		struct timeval timeout;
@@ -104,7 +104,7 @@ void* handle_orders(void* shared_void){										//HELP PLZ!
 			shared->netw_membs[slave_id].floor = recv_msg.content[1];
 			shared->netw_membs[slave_id].dir = recv_msg.content[2];
 			shared->netw_membs[slave_id].elev_fsm_state = recv_msg.content[3];
-			lives = 3;
+			lives = 4;
 			prev_heartbeat = clock();
 			break;
 
@@ -188,8 +188,8 @@ void* manage_backup(void* shared_void){
 		else{
 			send_msg[0] = BACKUP_DATA;
 			for (int button = 0; button < N_FLOORS * 2; ++button){
-				if (shared->netw_master_q[button] != send_msg[button +1]){
-					send_msg[button +1] = shared->netw_master_q[button];
+				if (shared->netw_master_q[button] != send_msg[button + 1]){
+					send_msg[button + 1] = shared->netw_master_q[button];
 					update = 1;
 				}
 			}

@@ -18,8 +18,8 @@ void serve(SharedVars* shared_void){
 		pthread_t event_thread;
 		pthread_create(&event_thread, NULL, &report_events, shared);
 
-		int sock_fd_set[2] = { 
-			shared->netw_membs[BROADCAST].sock_fd, 
+		int sock_fd_set[2] = {
+			shared->netw_membs[BROADCAST].sock_fd,
 			shared->netw_membs[ip_to_id(shared->master_ip)].sock_fd
 		};
 
@@ -49,14 +49,12 @@ bool netw_join(SharedVars* shared){
 
 void* report_events_slave(void* shared_void){
 	SharedVars* shared = (SharedVars*)shared_void;
-	
+
 	while (1){
 		usleep(0.1*SEC_TO_USEC);
 		if (shared->orders_new[0]){
 			shared->netw_membs[ip_to_id(shared->master_ip)].send(shared->orders_new);
-			for (int i = 0; i < 1 + N_FLOORS * 2; ++i){
-				shared->orders_new[i] = 0;
-			}
+			memset
 		}
 		if (shared->orders_complete){
 			shared->netw_membs[ip_to_id(shared->master_ip)].send(shared->orders_complete);
@@ -68,7 +66,7 @@ void* report_events_slave(void* shared_void){
 }
 
 void read_broadcast(SharedVars* shared, fd_set* read_fd_set_ptr){
-	static int lives = 3;
+	static int lives = 4;
 	static clock_t prev_heartbeat = clock();
 
 	RecvMsg broadcast_msg;
@@ -80,7 +78,7 @@ void read_broadcast(SharedVars* shared, fd_set* read_fd_set_ptr){
 	}
 	switch (broadcast_msg.MSG_ID){
 	case HEARTBEAT:
-		lives = 3;
+		lives = 4;
 		prev_heartbeat = clock();
 		break;
 

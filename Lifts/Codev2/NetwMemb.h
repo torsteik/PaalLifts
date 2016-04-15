@@ -16,7 +16,7 @@
 #define NO_RESPONSE		2
 #define	HEARTBEAT		3
 #define CONNECT			4
-#define ACCEPT_CON		5
+#define ACKNOWLEDGE		5
 #define TOGGLE_BACKUP	4
 #define BACKUP_DATA		5
 #define NEW_ORDER		7
@@ -27,6 +27,10 @@
 #define BACKUP_ROLE		2
 #define MASTER_ROLE		3
 #define BROADCAST_ROLE	4
+//------SOMETHING------------
+#define NO_BACKUP	0
+#define N_FLOORS	4
+#define SEC_TO_USEC	1000000
 
 unsigned long id_to_ip(uint8_t id){ return 0x40BC57600 + id; }
 uint8_t ip_to_id(unsigned long ip){ return ip - 0x40BC57600; }
@@ -45,6 +49,8 @@ public:
 	RecvMsg recv();
 	int send(char msg_content[BUFF_SIZE]);
 	void send_heartbeat();
+	RecvMsg recv_and_ack();
+	int send_and_get_ack(char msg_content[BUFF_SIZE]);
 	
 	int sock_fd;
 	struct sockaddr_in bind_addr;						//Could be private

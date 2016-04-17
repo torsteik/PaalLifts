@@ -2,40 +2,14 @@
 #define NETWMEMB_H
 
 #include <netinet/in.h>
-#include <stdint.h>
+#include <sys/select.h>
 
-//------NETWORK ADDRESS------
-#define MY_ID			0
-#define BROADCAST		255						//0x40BC576FF equals 129.241.187.255
-#define NETW_INFO_PORT	32123
-#define ELEV_INFO_PORT	32124
-//------MSG FORMAT-----------
-#define BUFF_SIZE		1024
-#define MSG_ID			content[0]				//Consider making enum && move to network_fsm.h, delete?
-#define ERROR			1
-#define NO_RESPONSE		2
-#define	HEARTBEAT		3
-#define CONNECT			4
-#define ACKNOWLEDGE		5
-#define TOGGLE_BACKUP	4
-#define BACKUP_DATA		5
-#define NEW_ORDER		7
-#define COMPLETED_ORDER	8
-//------NETW MEMB ROLES------
-#define NO_ROLE			0
-#define SLAVE_ROLE		1
-#define BACKUP_ROLE		2
-#define MASTER_ROLE		3
-#define BROADCAST_ROLE	4
-//------SOMETHING------------
-#define NO_BACKUP	0
-#define N_FLOORS	4
-#define SEC_TO_USEC	1000000
+#include "defines.h"
 
-unsigned long id_to_ip(uint8_t id){ return 0x40BC57600 + id; }
-uint8_t ip_to_id(unsigned long ip){ return ip - 0x40BC57600; }
+unsigned long id_to_ip(char id);
+char ip_to_id(unsigned long ip);
 
-struct RecvMsg{											// Maybe change the name to something recv like
+struct RecvMsg{
 	int sender_ip;
 	char content[BUFF_SIZE];
 };
@@ -43,22 +17,24 @@ struct RecvMsg{											// Maybe change the name to something recv like
 class NetwMemb{
 public:
 	NetwMemb();
-	NetwMemb(int recv_ip, int send_ip, int port, int init_state);// Maybe make 3rd option where there is no recv ip so no recv addr is created
+	NetwMemb(int bind_ip, int send_ip, int port, int init_state);
 	
+	// Network
 	int sock_fd;
-	struct sockaddr_in bind_addr;						//Could be private
+	struct sockaddr_in bind_addr;
 	struct sockaddr_in send_addr;
-	int netw_role;											//prefix netw?
+	std::atomic<int> netw_role;
 	
-	int elev_fsm_state;
-	int floor;
-	int dir;
+	// Elevator 
+	std::atomic<int> elev_fsm_state;
+	std::atomic<int> floor;
+	std::atomic<int> dir;
 
 	void sock_setup();
-	RecvMsg recv();
-	RecvMsg recv_and_ack();
+	struct RecvMsg recv();
 	int send(char msg_content[BUFF_SIZE]);
 	int send_and_get_ack(char msg_content[BUFF_SIZE]);
-	void send_heartbeat();
+	void send_heartbeat(char netw_master_q[N_FLOORS * 2]);
 };
-#endif
+
+#endif // ERROR???

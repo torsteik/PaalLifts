@@ -1,47 +1,45 @@
-#include <math.h>
+#include <pthread.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-//#include <unistd.h>
+#include <unistd.h>
 #include <string>
 #include <fstream>
 #include <iostream>
 
+#include "defines.h"
+#include "SharedVars.h"
+#include "elev.h"
+#include "netw_fsm.h"
+#include "elev_fsm.h"
+#include "main.h"
+
 using namespace std;
-#define N_FLOORS 4
-#define NUM_FSM_STATES 4
 
-typedef enum tag_TEMP_STOP_substate{
-	ARRIVAL = 0,
-	WAIT_FOR_DOOR = 1,
-	DETERMINE_NEXT_ACTION = 2
-} TEMP_STOP_substate_t;
+int main(){
+	elev_set_motor_direction(DIRN_STOP);
+	elev_init();
+	sleep(1);
+	recover_internal_queue();
+	pthread_t main_thread_0;
+	pthread_t main_thread_1;
+	pthread_create(&main_thread_0, NULL, elev_fsm, NULL);
+	pthread_create(&main_thread_1, NULL, netw_fsm, NULL);
+			
+	pthread_join(main_thread_0, NULL);
+	pthread_join(main_thread_1, NULL);
 
-int internal_queue[] = { 0, 0, 0, 0 };
-int FSM_state[] = { 1, 0, 1, 1 };
-int previous_floor = 2;
-int previous_dir = 1;
-TEMP_STOP_substate_t substate = ARRIVAL;
+	return 0;
+}
 
-//void elevator_io_init(){
-//	if (!elev_init()){
-//		printf("Initialization failed!\n");
-//		exit(0);
-//	}
-//
-//	//Find defined state
-//	elev_set_motor_direction(DIRN_UP);
-//	while (elev_get_floor_sensor_signal() == -1){ usleep(200) }
-//
-//	currentFloor = elev_get_floor_sensor_signal() + 1;
-//	elev_set_floor_indicator(currentFloor - 1);
-//}
+// Unused functions for local backup of variables necessary to resume operation
 
-//-----------------------------------------------------------------------------------------------------------------
-
-int char_to_int(char c){
-	return (int)c - 48;
+int char_to_int(char val){
+	return (val - 48);
+}
+char int_to_char(int val){
+	return (val + 48);
 }
 
 void recover_internal_queue(){
@@ -50,8 +48,10 @@ void recover_internal_queue(){
 
 	if (recovery_file){
 		for (int i = 0; i < N_FLOORS; ++i){
-			internal_queue[i] = recovery_file.get();
-		}
+			if(char_to_int(recovery_file.get())){
+				shared.elev_q.add_new_order(i, 2);
+			}
+		}std::cout << std::endl;
 	}
 	else{
 		cout << "Unable to read from internal queue's recovery file" << endl;
@@ -59,13 +59,14 @@ void recover_internal_queue(){
 	recovery_file.close();
 }
 
-void write_recovery_file(){
+void write_internal_queue(){
 
 	ofstream recovery_file("internal_recovery.txt", std::fstream::out | std::fstream::trunc);
 
 	if (!recovery_file.fail()){
 		for (int i = 0; i < N_FLOORS; ++i){
-			recovery_file << internal_queue[i];
+			printf("On position %i, we find: %i \n", i, (int)shared.elev_q.int_q[i]);
+			recovery_file << (int)shared.elev_q.int_q[i];
 		}
 	}
 
@@ -82,18 +83,33 @@ void recover_process_pair(){
 	ifstream process_recovery_file("process_state.txt", std::fstream::in);
 
 	if (process_recovery_file){
-		for (int i = 0; i < NUM_FSM_STATES; ++i){
-			FSM_state[i] = process_recovery_file.get();
-		}
+		
+		shared.elev_fsm_state = process_recovery_file.get();
+		shared.netw_role = process_recovery_file.get();
+		
+		shared.floor = process_recovery_file.get();
+		shared.dir = process_recovery_file.get();
 
-		previous_floor = process_recovery_file.get();
-		previous_dir = process_recovery_file.get();
-		substate = (TEMP_STOP_substate_t)process_recovery_file.get();
+		//----------------Network states---------------------------
+
+		for (int i = 0; i < 255; ++i){
+			shared.netw_membs[i].netw_role = process_recovery_file.get();
+		}
+		shared.netw_fsm_state = process_recovery_file.get();
+		for (int i = 0; i < 2 * N_FLOORS; ++i){
+			shared.netw_master_q[i] = process_recovery_file.get();
+		}
+		for (int i = 0; i < 2 * N_FLOORS; ++i){
+			shared.elev_q.ext_q[i] = process_recovery_file.get();
+		}
+		shared.recovered  = 1;
 	}
 	else{
-		cout << "Unable to read from process pair's recovery file" << endl;
+		cout << "Unable to read from internal queue's recovery file" << endl;
+		shared.recovered = 0;
 	}
 	process_recovery_file.close();
+
 }
 
 void write_process_pair(){
@@ -101,27 +117,29 @@ void write_process_pair(){
 	ofstream process_recovery_file("process_state.txt", std::fstream::out | std::fstream::trunc);
 
 	if (!process_recovery_file.fail()){
-		for (int i = 0; i < NUM_FSM_STATES; ++i){
-			process_recovery_file << FSM_state[i];
+		
+		process_recovery_file << shared.elev_fsm_state;
+		process_recovery_file << shared.netw_role;
+
+		process_recovery_file << shared.floor;
+		process_recovery_file << shared.dir;
+
+		//----------------Network states---------------------------
+
+		for (int i = 0; i < 255; ++i){
+			process_recovery_file << shared.netw_membs[i].netw_role;
 		}
-
-		process_recovery_file << previous_floor;
-		process_recovery_file << previous_dir;
-		process_recovery_file << (int)(substate);
-
-		//Network states
+		process_recovery_file << shared.netw_fsm_state;
+		for (int i = 0; i < 2 * N_FLOORS; ++i){
+			process_recovery_file << shared.netw_master_q[i];
+		}
+		for (int i = 0; i < 2 * N_FLOORS; ++i){
+			process_recovery_file << shared.elev_q.ext_q[i];
+		}
 	}
 
 	else{
-		cout << "Unable to write to the process pair's recovery file" << endl;
+		cout << "Unable to write to the internal queue's recovery file" << endl;
 	}
 	process_recovery_file.close();
-}
-
-//-----------------------------------------------------------------------------------------------------------------
-int main(){
-	//elevator_io_init();
-	write_process_pair();
-	system("pause");
-	return 0;
 }

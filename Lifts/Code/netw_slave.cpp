@@ -43,9 +43,13 @@ void serve(unsigned long master_ip){
 			if (select(FD_SETSIZE, &read_fd_set, NULL, NULL, &timeout) > -1){
 				
 				if(read_broadcast(&read_fd_set)){
+					shared.netw_membs[master_id] = NetwMemb();
 					return;
 				}
 				read_master(&read_fd_set, master_id);
+				shared.netw_membs[master_id].floor = shared.floor;
+				shared.netw_membs[master_id].dir = shared.dir;
+				shared.netw_membs[master_id].elev_fsm_state = shared.elev_fsm_state;
 				shared.netw_membs[master_id].send_heartbeat(shared.netw_master_q, timeout);
 
 			}
@@ -58,11 +62,16 @@ void* report_local_events_slave(void* master_id_void){
 	
 	while (1){
 		usleep(0.15*SEC_TO_USEC);
+
 		if (shared.elev_q.orders_new[0]){
+			printf("Status: %i\n", shared.elev_q.orders_new[0]);
+			printf("sending new order\n");
 			shared.netw_membs[master_id].send(shared.elev_q.orders_new);
+			printf("ChckP1\n");
 			memset(shared.elev_q.orders_new, 0, sizeof(shared.elev_q.orders_new));
 		}
 		if (shared.elev_q.orders_complete[0]){
+			printf("Notifies master, order_completed\n");
 			if(shared.netw_membs[master_id].send_and_get_ack(shared.elev_q.orders_complete)){
 				memset(shared.elev_q.orders_complete, 0, sizeof(shared.elev_q.orders_complete));
 			}
@@ -84,14 +93,12 @@ int read_broadcast(fd_set* read_fd_set_ptr){
 
 	switch (broadcast_msg.MSG_ID){
 	case HEARTBEAT:
-		printf("NOT Loosing life. Lives = %i\n", lives);
 		shared.elev_q.sync_q_with_netw(broadcast_msg.content);
 		lives = 4;
 		prev_heartbeat = time(0);
 		return 0;
 
 	case NO_RESPONSE:
-		printf("Loosing life. Lives = %i\n", lives);
 		if ((time(0) - (double)prev_heartbeat) > 1){
 			prev_heartbeat = time(0);
 			lives--;
@@ -101,6 +108,7 @@ int read_broadcast(fd_set* read_fd_set_ptr){
 					printf("I'm going on an adventure\n");
 				}
 				else{
+					shared.backup = 0;
 					shared.netw_fsm_state = FSM_MASTER;
 					printf("I'm backup\n");
 				}
@@ -109,6 +117,7 @@ int read_broadcast(fd_set* read_fd_set_ptr){
 		}
 		return 0;
 	}
+	return 0;
 }
 
 void read_master(fd_set* read_fd_set_ptr, int master_id){
@@ -132,7 +141,8 @@ void read_master(fd_set* read_fd_set_ptr, int master_id){
 	case TOGGLE_BACKUP:
 		if (shared.netw_membs[MY_ID].netw_role == SLAVE_ROLE){
 			shared.netw_membs[MY_ID].netw_role = BACKUP_ROLE;
-			shared.netw_membs[(int)master_msg.content[1]].netw_role = BACKUP_ROLE;
+			shared.backup = 1;
+			shared.netw_membs[(unsigned char)master_msg.content[1]].netw_role = BACKUP_ROLE;
 			
 			send_msg[0] = ACKNOWLEDGE;
 			shared.netw_membs[master_id].send(send_msg);

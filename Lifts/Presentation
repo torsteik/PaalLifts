@@ -1,1 +1,50 @@
 
+Presentasjon
+
+----- Astrit -------------
+Design option
+--------------------------
+
+Designets overflate
+
+----- Fredrik ------------
+Shared variables
+Local elev
+-	FSM
+-	HANDLE BUTTON PRESS (SYNC)
+o	Q: ext vs int
+-	FIND DESTINATION
+-	EVALUATE FLOOR
+----------------------------
+
+----- Torstein -------------
+Network
+-	FSM
+-	State: Slave
+o	Sender: HEARTBEAT, NEW_ORDER, COMPLETED_ORDER, CONNECT
+o	Mottar: HEARTBEAT, NEW_ORDER, (TOGGLE_BACKUP, BACKUP_DATA)
+o	Serve master
+-	State: Master
+o	Sender: HEARTBEAT, TOGGLE_BACKUP, BACKUP_DATA, NEW_ORDER
+o	Mottat: HEARTBEAT, NEW_ORDER, COMPLETED_ORDER, CONNECT
+o	Manage slaves
+----------------------------
+
+Redundancy
+----- Pål ------------------
+Process pairs
+//Backward error recovery(tenkt)
+Tap av nettverk
+Tap av motor power (rising edge detector i evaluate floor)
+----------------------------
+----- Astrit ---------------
+Tap av netw_member
+-	Slave: master recycles orders
+-	Backup: master finds new
+-	Master: backup becomes master
+----------------------------
+----- Pål ------------------
+Internal q recovery
+Ting som kan gå galt:
+Master + backup dør, ordre blir tapt
+----------------------------

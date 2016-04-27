@@ -1,0 +1,44 @@
+Task 1:
+  1.1:  We assign priority to tasks for multiple reasons, but one nice property of setting task priorities is that
+        it lets urgent/important tasks happen as fast as possible instead of having to wait for a less urgent, less important tasks
+        to complete. Usually short tasks are given a high priority while longer ones needs to have lower priorities so not to block
+        everyone for longer time intervals (as the scheduling policy EDF).
+
+  1.2:  It's important that a scheduler has the ability to switch between threads without loss of information as well as detecting
+        when a thread is being blocked.
+        Other important, but not essential, features are the ability to choose scheduling policy, set priorities, toggle preemtive scheduling,
+        as well as having implemented priority inheritance to counteract priority inversion.
+        
+Task 2: 
+  See excel
+
+Task 3:
+  3.1:  Priority inversion is when a high priority task, A, is blocked on a resource allocated by a low priority task, C, which itself
+        gets no runtime because it's blocked on priority by a mid priority task, B. This means, in practice, that B gets priority over A.
+        
+        Unbounded priority inversion is when the priorities are inverted to the point that a higher priority thread is starved before the
+        lower priority ones, which is unwanted because of the high priority thread's importance. This cannot happend though, if the system
+        is schedulable.
+  
+  3.2:  No, it does not. If thread B was interupted by thread A in priority while having allocated resource N, then thread A allocate M and
+        tries to allocate N, but is blocked by thread B. Thread B has now inherited thread A's priority and tries to complete the work it need
+        N for. However, since this work requires allocation of the resource M, it can't be completed, since thread A allready has allocated it.
+        
+        
+Task 4:
+  4.1:  Switching between threads are instant: This is not realistic as the OS needs to empty the CPU registers between each thread
+        switch. This fact is important to consider when utilizing a scheduling policy as RR, as it adds a non-insignificant amount 
+        of switching time.
+        
+        Periods and execution time (worst case) is known: It is possible to estimate a task's execution time based of how much time
+        it previously used. Therefore one can make a estimation of the worst case which helds a certain percentage of the times.
+        Periods are always known as they are set by the developers, as well as that they already are estimates.
+        
+  4.2:  [sum(C_i/T_i) = 53/60] <= [n(2^(1/n)-1) = 3*(2^(1/3)-1)] is FALSE. So the task set can not be determined to be schedulable.
+  
+  4.3:  See excel for calculation. 
+        Rc = 5  <= T_c = 20  is TRUE
+        Rb = 15 <= T_b = 30  is TRUE
+        Ra = 50 <= T_a = 50  is TRUE
+        This means the task set is schedulable because this test is both necessary and sufficient opposed to the utilitization test which is
+        merely sufficient.

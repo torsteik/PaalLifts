@@ -1,0 +1,7 @@
+SAFETY/DEADLOCKS:
+  Q1: LTSA detects it when we run the safety command.
+  Q2: Check if all states have an exit.
+
+DINING PHILOSOPHERS:
+  Q1: See attachment.
+  Q2
